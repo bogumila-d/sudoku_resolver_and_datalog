@@ -68,30 +68,19 @@ print('domains: ', domains)
 # ------------------------------------------------------------------------------
 sudoku = csp.Problem()
 
-# sudoku.addVariables(cols[1], domains)
-# sudoku.addConstraint(csp.AllDifferentConstraint())
-# sol = sudoku.getSolutions()
-# print(sol)
-# print("len: ", len(sol))
 
 [sudoku.addVariables(col, domains) for col in cols]
 
-for col in cols:
-    sudoku.addConstraint(csp.AllDifferentConstraint(), col)
-
-for row in rows:
-    sudoku.addConstraint(csp.AllDifferentConstraint(), row)
-
-for box in boxes:
-    sudoku.addConstraint(csp.AllDifferentConstraint(), box)
+[sudoku.addConstraint(csp.AllDifferentConstraint(), col) for col in cols]
+[sudoku.addConstraint(csp.AllDifferentConstraint(), row) for row in rows]
+[sudoku.addConstraint(csp.AllDifferentConstraint(), box) for box in boxes]
 
 length = range(len(riddle))
 
-for i in length:
-    for j in length:
-        if riddle[i][j] != 0:
-            sudoku.addConstraint(lambda var, value=riddle[i][j]:
-                                 var == value, [rows[i][j]])
+for row in length:
+    [sudoku.addConstraint(lambda var, value=riddle[row][col]: var == value, [rows[row][col]])
+     for col in length if riddle[row][col] != 0]
+
 
 # ------------------------------------------------------------------------------
 # solve CSP
@@ -100,10 +89,7 @@ for i in length:
 solutions = sudoku.getSolutions()
 if len(solutions) > 0:
     solution = solutions[0]
-    for row in rows:
-        print([solution[i] for i in row])
-
-
+    [print([solution[i] for i in row]) for row in rows]
 
 # solutions = sudoku.getSolutions()
 # print(len(solutions))

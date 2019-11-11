@@ -26,14 +26,14 @@ def _():
                            'has_link, '
                            'all_connections, '
                            'max_five_people, '
-                           'many_more_needed')
+                           'helper')
 
     # First, treat calls as simple social links (denoted as knows), that have no date
     # the caller knows callee
     for i in range(len(calls)):
         +knows(calls.iloc[i, 1], calls.iloc[i, 2])
         # Task 1: Knowing someone is a bi-directional relationship -> define the predicate accordingly
-    knows(X, Y) <= knows(Y, X)
+    knows(X, Y) <= knows(Y, X) & (X != Y)
 
     print(knows(suspect, Y))
 
@@ -44,8 +44,8 @@ def _():
     # (2 if you read in all 150 communication records)
     #   (be aware of the unusual behaviour that if an assert evaluates as true, an exception is thrown)
 
-    has_link(X, Y) <= knows(X, Y)
     has_link(X, Y) <= knows(X, Z) & has_link(Z, Y) & (X != Y)
+    has_link(X, Y) <= knows(X, Y)
 
     assert (has_link('Quandt Katarina', company_Board[0]) == ())
     # assert (has_link('Quandt Katarina', company_Board[1]) == ())
@@ -63,20 +63,24 @@ def _():
 #     path(Y,Y,P) <=  (P==[Y])
 # path(X,Y,P) <= path(X,Z,P2) & knows(Z,Y) & (Y._not_in(P2)) &  (X!=Y)  & (P==P2 + [Y])
 
-    all_connections(X, Y, P) <= all_connections(X, Z, P2) & knows(Z, Y) & (X != Y) & (X._not_in(P2)) & (Y._not_in(P2)) & (P == P2+[Y])
-    all_connections(X, Y, P) <= knows(X, Y) & (P == [Y])
+    helper(X, Y, P2) <= (X != Y) & (X._not_in(P2)) & (Y._not_in(P2))
+
+    all_connections(X, Y, P) <= all_connections(X, Z, P2) & knows(Z, Y) & helper(X, Y, P2) & (P == P2+[Z])
+    all_connections(X, Y, P) <= knows(X, Y) & (P == [])
 
     # Task 4: There are too many paths. We are only interested in short paths.
     # Find all the paths between the suspect and the company board that contain five people or less
 
-    (max_five_people(X, Y, P, C)) <= (max_five_people(X, Z, P2, C2)) & knows(Z, Y) & (X != Y) \
-    & (X._not_in(P2)) & (Y._not_in(P2)) & (P == P2+[Z]) & (C == C2 + 1) & (C <= 2)
+    # (max_five_people(X, Y, P, C)) <= (max_five_people(X, Z, P2, C2)) & all_connections(X, Y, P) & (C == C2 + 1) & (C <= 2)
+
+    (max_five_people(X, Y, P, C)) <= (max_five_people(X, Z, P2, C2)) & knows(Z, Y) \
+    & helper(X, Y, P2) & (P == P2+[Z]) & (C == C2 + 1) & (C <= 2)
     (max_five_people(X, Y, P, C)) <= knows(X, Y) & (P == []) & (C == 0)
 
     for member in company_Board:
-        print("Who: ", suspect, "/", member)
+        print("Who ", suspect, "/", member)
         print(max_five_people(suspect, member, P, C))
-        print("Who: ", member, "/", suspect)
+        print("Who ", member, "/", suspect)
         print(max_five_people(member, suspect, P, C))
 
     # ---------------------------------------------------------------------------
@@ -86,7 +90,7 @@ def _():
     date_board_decision = '12.2.2017'
     date_shares_bought = '23.2.2017'
 
-    pyDatalog.create_terms('called, texted, descending_communication')
+    pyDatalog.create_terms('called, texted, descending_communication, data_valid')
     pyDatalog.clear()
     for i in range(len(calls)):  # calls
         +called(calls.iloc[i, 1], calls.iloc[i, 2], calls.iloc[i, 3])
@@ -103,11 +107,13 @@ def _():
     #   You are allowed to naively compare the dates lexicographically using ">" and "<";
     #   it works in this example (but is evil in general)
 
+    data_valid(D) <= (D >= date_board_decision) & (D <= date_shares_bought)
+    helper(X, Y, P, P2, D, D2) <= (X != Y) & (X._not_in(P2)) & (Y._not_in(P2)) & (P == P2+[D2]+[Y]+[D])
+
     print("descending_communication")
     (descending_communication(X, Y, D, P)) <= \
-    (descending_communication(X, Z, D2, P2)) & (called(Z, Y, D) or texted(Z, Y, D)) & (X != Y) & \
-    (X._not_in(P2)) & (Y._not_in(P2)) & (P == P2+[D2]+[Y]+[D]) & \
-    (D >= date_board_decision) & (D <= date_shares_bought) & (D < D2) & (D2 >= date_board_decision) & (D2 <= date_shares_bought)
+    (descending_communication(X, Z, D2, P2)) & (called(Z, Y, D) or texted(Z, Y, D)) & helper(X, Y, P, P2, D, D2)\
+    & data_valid(D) & data_valid(D2) & (D < D2)
     (descending_communication(X, Y, D, P)) <= called(X, Y, D) & (P == [Y])
 
     # (descending_communication(X, Y, D, P)) <= \
@@ -122,9 +128,9 @@ def _():
     # (with the restriction that the dates have to be ordered correctly)
 
     for member in company_Board:
-        print("From: ", suspect, 'to: ', member)
+        print("From ", suspect, 'to ', member)
         print(descending_communication(suspect, member, D, P))
-        print("From: ", member, "to: ", suspect)
+        print("From ", member, "to ", suspect)
         print(descending_communication(member, suspect, D, P))
 
     # Final task: after seeing this information, who, if anybody, do you think gave a tip to the suspect?
