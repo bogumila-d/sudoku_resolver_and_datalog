@@ -44,24 +44,18 @@ def _():
     # (2 if you read in all 150 communication records)
     #   (be aware of the unusual behaviour that if an assert evaluates as true, an exception is thrown)
 
-    has_link(X, Y) <= knows(X, Z) & has_link(Z, Y) & (X != Y)
+    has_link(X, Y) <= has_link(Z, Y) & knows(X, Z) & (X != Y)
     has_link(X, Y) <= knows(X, Y)
 
     assert (has_link('Quandt Katarina', company_Board[0]) == ())
-    # assert (has_link('Quandt Katarina', company_Board[1]) == ())
-    # assert (has_link('Quandt Katarina', company_Board[2]) == ())
+    assert (has_link('Quandt Katarina', company_Board[1]) == ())
+    assert (has_link('Quandt Katarina', company_Board[2]) == ())
 
     # 'Quandt Katarina' knows 'Eder Eva' and 'Michael Jill'
 
     # Task 3: You already know that a connection exists; now find the concrete paths between the board members
     # and the suspect
-    # Hints:
-    #   if a knows b, there is a path between a and b
-    #   (X._not_in(P2)) is used to check whether x is not in path P2
-    #   (P==P2+[Z]) declares P as a new path containing P2 and Z
 
-#     path(Y,Y,P) <=  (P==[Y])
-# path(X,Y,P) <= path(X,Z,P2) & knows(Z,Y) & (Y._not_in(P2)) &  (X!=Y)  & (P==P2 + [Y])
 
     helper(X, Y, P2) <= (X != Y) & (X._not_in(P2)) & (Y._not_in(P2))
 
@@ -70,8 +64,6 @@ def _():
 
     # Task 4: There are too many paths. We are only interested in short paths.
     # Find all the paths between the suspect and the company board that contain five people or less
-
-    # (max_five_people(X, Y, P, C)) <= (max_five_people(X, Z, P2, C2)) & all_connections(X, Y, P) & (C == C2 + 1) & (C <= 2)
 
     (max_five_people(X, Y, P, C)) <= (max_five_people(X, Z, P2, C2)) & knows(Z, Y) \
     & helper(X, Y, P2) & (P == P2+[Z]) & (C == C2 + 1) & (C <= 2)
@@ -103,9 +95,6 @@ def _():
     # Task 5: Again we are interested in links, but this time a connection is only valid
     # if the links are descending in date;
     #         find out who could have actually sent the information by adding this new restriction
-    # Hints:
-    #   You are allowed to naively compare the dates lexicographically using ">" and "<";
-    #   it works in this example (but is evil in general)
 
     data_valid(D) <= (D >= date_board_decision) & (D <= date_shares_bought)
     helper(X, Y, P, P2, D, D2) <= (X != Y) & (X._not_in(P2)) & (Y._not_in(P2)) & (P == P2+[D2]+[Y]+[D])
