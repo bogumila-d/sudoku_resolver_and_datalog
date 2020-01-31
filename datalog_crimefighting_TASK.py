@@ -48,8 +48,8 @@ def _():
     has_link(X, Y) <= knows(X, Y)
 
     assert (has_link('Quandt Katarina', company_Board[0]) == ())
-    assert (has_link('Quandt Katarina', company_Board[1]) == ())
-    assert (has_link('Quandt Katarina', company_Board[2]) == ())
+    # assert (has_link('Quandt Katarina', company_Board[1]) == ())
+    # assert (has_link('Quandt Katarina', company_Board[2]) == ())
 
     # 'Quandt Katarina' knows 'Eder Eva' and 'Michael Jill'
 
